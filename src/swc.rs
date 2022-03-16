@@ -1,10 +1,5 @@
 use parser::{lexer::Lexer, StringInput, Syntax};
-use std::{
-    fs,
-    io::Write,
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::{fs, io::Write, path::PathBuf, sync::Arc};
 use swc::{
     config::{Config, JscConfig, ModuleConfig, Options, SourceMapsConfig},
     ecmascript::ast::{Decl, EsVersion, ModuleItem, Pat, Stmt},
@@ -15,7 +10,7 @@ use swc_common::{
 };
 use swc_ecma_parser as parser;
 
-pub fn swc_main(code: &str) -> String {
+pub fn swc_main(code: &str, path: &PathBuf) -> String {
     let cm = Arc::<SourceMap>::default();
     let handler = Arc::new(Handler::with_tty_emitter(
         ColorConfig::Auto,
@@ -23,15 +18,12 @@ pub fn swc_main(code: &str) -> String {
         false,
         Some(cm.clone()),
     ));
-    let c = swc::Compiler::new(cm.clone());
-    let fm = cm.new_source_file(
-        FileName::Real(Path::new("script.js").into()),
-        code.to_string(),
-    );
+    let compiler = swc::Compiler::new(cm.clone());
+    let fm = cm.new_source_file(FileName::Real(path.to_path_buf()), code.to_string());
     // let fm = cm.load_file(Path::new(filename)).unwrap();
 
     let lexer = Lexer::new(
-        Syntax::Es(Default::default()),
+        Syntax::Typescript(Default::default()),
         Default::default(),
         StringInput::from(&*fm),
         None,
@@ -56,7 +48,7 @@ pub fn swc_main(code: &str) -> String {
             }
         }
     }
-    let result = c
+    let result = compiler
         .process_js_file(
             fm,
             &handler,
@@ -66,7 +58,7 @@ pub fn swc_main(code: &str) -> String {
                         target: Some(EsVersion::Es2016),
                         ..Default::default()
                     },
-                    module: Some(ModuleConfig::CommonJs(Default::default())),
+                    module: Some(ModuleConfig::Umd(Default::default())),
                     source_maps: Some(SourceMapsConfig::Bool(true)),
                     ..Default::default()
                 },
