@@ -58,7 +58,7 @@ pub fn swc_main(code: &str, path: &PathBuf) -> String {
                         target: Some(EsVersion::Es2016),
                         ..Default::default()
                     },
-                    module: Some(ModuleConfig::Umd(Default::default())),
+                    module: Some(ModuleConfig::Es6),
                     source_maps: Some(SourceMapsConfig::Bool(true)),
                     ..Default::default()
                 },
