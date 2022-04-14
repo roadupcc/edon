@@ -2,7 +2,8 @@ use std::{cell::RefCell, io::Error, rc::Rc};
 
 use tokio::sync::oneshot::{self, Receiver};
 use v8;
-
+use futures::futures::poll_fn;
+use std::task::Context;
 use crate::runner;
 
 pub struct ModEvaluate {
@@ -85,18 +86,21 @@ impl JTsRuntime {
         args: v8::FunctionCallbackArguments,
         mut _rv: v8::ReturnValue,
     ) {
-        for i in 0..args.length() {
-            if let Ok(v) = v8::Local::<v8::String>::try_from(args.get(i)) {
-                print!("{}", v.to_rust_string_lossy(scope));
-            }
-            if let Ok(v) = v8::Local::<v8::Boolean>::try_from(args.get(i)) {
-                print!("{}", v.to_rust_string_lossy(scope));
-            }
-            if let Ok(v) = v8::Local::<v8::Number>::try_from(args.get(i)) {
-                print!("{}", v.to_rust_string_lossy(scope));
-            }
-            print!(" ");
-        }
+        let result = serde_v8::from_v8(scope, args).unwrap();
+        println!("{result:?}");
+        // for i in 0..args.length() {
+
+        //     if let Ok(v) = v8::Local::<v8::String>::try_from(args.get(i)) {
+        //         print!("{}", v.to_rust_string_lossy(scope));
+        //     }
+        //     if let Ok(v) = v8::Local::<v8::Boolean>::try_from(args.get(i)) {
+        //         print!("{}", v.to_rust_string_lossy(scope));
+        //     }
+        //     if let Ok(v) = v8::Local::<v8::Number>::try_from(args.get(i)) {
+        //         print!("{}", v.to_rust_string_lossy(scope));
+        //     }
+        //     print!(" ");
+        // }
         print!("\n");
     }
     pub fn set_func(
@@ -113,7 +117,7 @@ impl JTsRuntime {
         obj.set(scope, print_name.into(), val.into());
     }
 
-    pub fn exec(&mut self, code: String) -> Receiver<Result<(), Error>> {
+    pub fn mod_evaluate(&mut self, code: String) -> Receiver<Result<(), Error>> {
         let isolate = self.isolate.as_mut().unwrap();
         let state = isolate
             .get_slot::<Rc<RefCell<JTsRuntimeState>>>()
@@ -175,6 +179,20 @@ impl JTsRuntime {
             }
         };
         receiver
+    }
+    pub fn run_event_loop(&mut self){
+        poll_fn(|ctx: &mut Context|{
+            let isolate = self.isolate.as_mut().unwrap();
+            let state = isolate
+                .get_slot::<Rc<RefCell<JTsRuntimeState>>>()
+                .unwrap()
+                .clone();
+
+            {
+                state.borrow().waker.register(ctx.waker());
+            }
+
+        })
     }
     fn resolve_callback<'s>(
         context: v8::Local<'s, v8::Context>,

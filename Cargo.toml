@@ -7,11 +7,12 @@ version = "0.1.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-swc = "*"
-swc_common = {version = "*", features = ["tty-emitter"]}
-swc_ecma_parser = "*"
-v8 = "*"
+swc = "0.167.0"
+swc_common = {version = "0.17.21", features = ["tty-emitter"]}
+swc_ecma_parser = "0.101.2"
+v8 = "0.41.0"
+serde_v8 = "0.39.0"
 
 [dependencies.tokio]
 features = ["full"]
-version = "1"
+version = "1.17.0"

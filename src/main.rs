@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut rtm = runtime::JTsRuntime::new();
 
-    let r = rtm.exec(code);
+    let r = rtm.mod_evaluate(code);
     let result = r.await?;
     println!("{:#?}", result);
 
